@@ -4,7 +4,6 @@ import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Links from "./pages/Links";
-import Chart from "./pages/Chart";
 
 function Routes() {
   const router = createBrowserRouter([
