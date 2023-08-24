@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+th,
+td {
+  @apply border;
+  @apply p-2;
+  @apply border-black;
+}

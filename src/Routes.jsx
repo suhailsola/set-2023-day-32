@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Links from "./pages/Links";
 
 function Routes() {
   const router = createBrowserRouter([
@@ -21,6 +22,10 @@ function Routes() {
     {
       path: "/login",
       element: <Login />,
+    },
+    {
+      path: "/links",
+      element: <Links />,
     },
   ]);
   return <RouterProvider router={router} />;
