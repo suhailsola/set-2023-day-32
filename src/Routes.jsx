@@ -28,10 +28,6 @@ function Routes() {
       path: "/links",
       element: <Links />,
     },
-    {
-      path: "/chart",
-      element: <Chart />,
-    },
   ]);
   return <RouterProvider router={router} />;
 }

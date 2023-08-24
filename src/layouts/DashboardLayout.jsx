@@ -38,10 +38,6 @@ const DashboardLayout = ({ children }) => {
       link: "/links",
       text: "Links",
     },
-    {
-      link: "/chart",
-      text: "Chart",
-    },
   ];
 
   return (
