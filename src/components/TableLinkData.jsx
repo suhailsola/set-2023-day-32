@@ -4,7 +4,11 @@ const TableLinkData = ({ linkUrl, children, copyLink }) => {
   return (
     <div className="flex justify-between items-center">
       {children}
-      <div>{linkUrl}</div>
+      <div>
+        <a className=" hover:text-gray-600" href={linkUrl} target="/">
+          {linkUrl}
+        </a>
+      </div>
       <button className=" p-1 rounded hover:bg-gray-200" onClick={copyLink}>
         <svg
           id="Copy_24"

@@ -38,15 +38,22 @@ const DashboardLayout = ({ children }) => {
       link: "/links",
       text: "Links",
     },
+    {
+      link: "/chart",
+      text: "Chart",
+    },
   ];
 
   return (
     <div className=" flex w-screen min-h-screen ">
-      <div className="w-[300px] p-2 space-y-8 bg-pink-800">
+      <div className=" sticky w-[300px] p-2 space-y-8 bg-pink-800">
         <h2 className=" p-2 text-white font-bold">bitly</h2>
         <div>
           {NAV.map((link, index) => (
-            <h2 className=" p-2 text-white hover:bg-white/10 cursor-pointer" key={index}>
+            <h2
+              className=" p-2 text-white hover:bg-white/10 cursor-pointer"
+              key={index}
+            >
               <Link to={link.link}>{link.text}</Link>
             </h2>
           ))}

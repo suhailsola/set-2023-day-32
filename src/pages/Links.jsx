@@ -13,14 +13,12 @@ import { ToastContainer, toast } from "react-toastify";
 import EditLinkButton from "../components/EditLinkButton";
 import CreateModal from "../components/CreateModal";
 import { useForm } from "react-hook-form";
+import useGetAllLink from "../utils/hooks/useGetAllLink";
+import QRCode from "react-qr-code";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const Links = () => {
-  const [linkState, setLinkState] = useState("pending");
-  const [data, setData] = useState([]);
-  const { jwtCookie } = useContext(AuthContext);
-
   const {
     register,
     handleSubmit,
@@ -29,6 +27,8 @@ const Links = () => {
     formState: { errors },
   } = useForm();
 
+  const { linkState, data } = useGetAllLink();
+  const { jwtCookie } = useContext(AuthContext);
   const onSubmit = async (data) => {
     try {
       setCreateLink("loading");
@@ -48,9 +48,9 @@ const Links = () => {
     try {
       setEditLink("loading");
       console.log(data, links);
-      //   const link = await updateEditLink(jwtCookie, links, {
-      //     link: data.link,
-      //   });
+      const link = await updateEditLink(jwtCookie, links, {
+        link: data.link,
+      });
       setEditLink("success");
       setEditStatus(false);
     } catch (error) {
@@ -58,22 +58,6 @@ const Links = () => {
       console.log(error);
     }
   };
-
-  const fetchLinks = async () => {
-    try {
-      setLinkState("loading");
-      const data = await getAllLinks(jwtCookie);
-      console.log(data.data.data.rows);
-      setLinkState("success");
-      setData(data.data.data.rows);
-    } catch (error) {
-      setLinkState("error");
-    }
-  };
-
-  useEffect(() => {
-    fetchLinks();
-  }, []);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [createLinkForm, setCreateLinkForm] = useState(false);
@@ -86,23 +70,12 @@ const Links = () => {
     toast(`Copied ${link}`);
   };
 
-  const [deleteLink, setDeleteLink] = useState("pending");
   const [deletePopUp, setDeletePopUp] = useState(false);
-  const handleDeleteLink = async (data) => {
-    try {
-      setDeleteLink("loading");
-      console.log("Deleting links");
-      //   const dataDeleted = await deleteSoftLink(jwtCookie, data);
-      setDeleteLink("success");
-      setDeletePopUp(false);
-      // console.log(dataDeleted);
-    } catch (error) {
-      setDeleteLink("error");
-      console.log(error);
-    }
-  };
 
   const [editStatus, setEditStatus] = useState(false);
+
+  const [selectedSlug, SetSelectedSlug] = useState("");
+  const [qrPopUp, setQrPopUp] = useState(false);
 
   useProtectedPage();
   return (
@@ -135,6 +108,68 @@ const Links = () => {
           </form>
         </CreateModal>
       )}
+      {qrPopUp && (
+        <CreateModal
+          urlLink={selectedSlug}
+          closing={"Close"}
+          closeModal={() => setQrPopUp(false)}
+        >
+          <div
+            style={{
+              height: "auto",
+              margin: "0 auto",
+              maxWidth: 500,
+              width: "100%",
+            }}
+          >
+            <QRCode
+              size={256}
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+              value={selectedSlug}
+              viewBox={`0 0 256 256`}
+            />
+          </div>
+          <h4>{selectedSlug}</h4>
+        </CreateModal>
+      )}
+      {deletePopUp && (
+        <DeleteModal slug={selectedSlug} setDeletePopUp={setDeletePopUp} />
+      )}
+      {editStatus && (
+        <CreateModal
+          urlLink={selectedSlug}
+          closeModal={() => setEditStatus(false)}
+          closing={"Cancel"}
+        >
+          <form
+            className="space-y-2"
+            onSubmit={handleSubmit((data) => editSubmit(data, selectedSlug))}
+          >
+            <div className="space-y-1">
+              <label htmlFor="">You want to edit the following link?</label>
+              <h4 className="text-center font-semibold">{`${BASE_URL}/${selectedSlug}`}</h4>
+            </div>
+            <label htmlFor="">Insert new link:</label>
+            <input
+              className="border border-gray-300 rounded w-[380px] px-2 py-1"
+              type="text"
+              {...register("link", { required: true })}
+            />
+            {errors.link && (
+              <span className=" text-red-600 text-center">
+                Link is required
+              </span>
+            )}
+            <button
+              type="submit"
+              className="bg-pink-800 text-white text-center rounded w-full p-2 hover:text-black"
+              disabled={editLink === "loading"}
+            >
+              {editLink === "loading" ? "Editing..." : "OK"}
+            </button>
+          </form>
+        </CreateModal>
+      )}
       <div className=" p-4 bg-gray-400 space-y-2">
         <div className="mx-2 flex justify-between items-center">
           <h4 className=" p-2 text-xl font-semibold text-pink-800">Links</h4>
@@ -152,6 +187,7 @@ const Links = () => {
               <th>No</th>
               <th>Destination</th>
               <th>Link</th>
+              <th>Get QR</th>
               <th>Visit count</th>
               <th>Created at</th>
               <th>Action</th>
@@ -169,64 +205,31 @@ const Links = () => {
                       copyLink={() => copyLink(`${BASE_URL}/${column.slug}`)}
                     ></TableLinkData>
                   </td>
+                  <td>
+                    {" "}
+                    <button
+                      onClick={() => {
+                        SetSelectedSlug(`${BASE_URL}/${column.slug}`);
+                        setQrPopUp(true);
+                      }}
+                      className="text-blue-400 hover:underline"
+                    >
+                      View
+                    </button>
+                  </td>
                   <td>{column.visit_counter}</td>
                   <td>{column.created_at}</td>
                   <td>
-                    {deletePopUp && (
-                      <CreateModal
-                        urlLink={column.slug}
-                        closing={"Cancel"}
-                        closeModal={() => setDeletePopUp(false)}
-                      >
-                        <h4 className=" font-semibold">
-                          Do you want to delete this link?
-                        </h4>
-                        <h4>{column.slug}</h4>
-                        <h4>'{`${BASE_URL}/${column.slug}`}'</h4>
-                        <button
-                          className="bg-pink-800 text-white text-center rounded w-full p-2 hover:text-black"
-                          onClick={() => handleDeleteLink(column.slug)}
-                        >
-                          {deleteLink === "success" ? "Confirm" : "Deleting"}
-                        </button>
-                      </CreateModal>
-                    )}
                     <EditLinkButton
-                      deleteLink={() => setDeletePopUp(true)}
-                      editLink={() => setEditStatus(true)}
+                      deleteLink={() => {
+                        SetSelectedSlug(column.slug);
+                        setDeletePopUp(true);
+                      }}
+                      editLink={() => {
+                        setEditStatus(true);
+                        SetSelectedSlug(column.slug);
+                      }}
                     />
-                    {editStatus && (
-                      <CreateModal
-                        closeModal={() => setEditStatus(false)}
-                        closing={"Cancel"}
-                      >
-                        <form
-                          className="space-y-2"
-                          onSubmit={handleSubmit((data) =>
-                            editSubmit(data, column.slug)
-                          )}
-                        >
-                          <h4>{column.slug}</h4>
-                          <input
-                            className="border border-gray-300 rounded w-[380px] px-2 py-1"
-                            type="text"
-                            {...register("link", { required: true })}
-                          />
-                          {errors.link && (
-                            <span className=" text-red-600 text-center">
-                              Link is required
-                            </span>
-                          )}
-                          <button
-                            type="submit"
-                            className="bg-pink-800 text-white text-center rounded w-full p-2 hover:text-black"
-                            disabled={editLink === "loading"}
-                          >
-                            {editLink === "loading" ? "Editing..." : "OK"}
-                          </button>
-                        </form>
-                      </CreateModal>
-                    )}
                   </td>
                 </tr>
               );
@@ -257,8 +260,39 @@ const Links = () => {
   );
 };
 
-const EditBox = ({ link }) => {
-  return <div>{link}</div>;
+const DeleteModal = ({ slug = "", setDeletePopUp }) => {
+  const [deleteLink, setDeleteLink] = useState("pending");
+  const { jwtCookie } = useContext(AuthContext);
+  const handleDeleteLink = async (data) => {
+    try {
+      setDeleteLink("loading");
+      console.log("Deleting links");
+      const dataDeleted = await deleteSoftLink(jwtCookie, data);
+      setDeleteLink("success");
+      setDeletePopUp(false);
+      console.log(dataDeleted);
+    } catch (error) {
+      setDeleteLink("error");
+      console.log(error);
+    }
+  };
+  return (
+    <CreateModal
+      urlLink={slug}
+      closing={"Cancel"}
+      closeModal={() => setDeletePopUp(false)}
+    >
+      <h4 className=" font-semibold">Do you want to delete this link?</h4>
+      <h4>{slug}</h4>
+      <h4>'{`${BASE_URL}/${slug}`}'</h4>
+      <button
+        className="bg-pink-800 text-white text-center rounded w-full p-2 hover:text-black"
+        onClick={() => handleDeleteLink(slug)}
+      >
+        {deleteLink === "success" ? "Confirm" : "Deleting"}
+      </button>
+    </CreateModal>
+  );
 };
 
 export default Links;
