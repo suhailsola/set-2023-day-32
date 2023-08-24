@@ -4,7 +4,6 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import { AuthContext } from "../App";
 import {
   deleteSoftLink,
-  getAllLinks,
   postCreateNewLink,
   updateEditLink,
 } from "../utils/api";
@@ -36,7 +35,7 @@ const Links = () => {
       const link = await postCreateNewLink(jwtCookie, {
         link: data.link,
       });
-      setCreateLink("success");
+      setTimeout(setCreateLink("success"), 2000);
       console.log(data.link);
     } catch (error) {
       setCreateLink("error");
@@ -78,11 +77,24 @@ const Links = () => {
   const [selectedSlug, SetSelectedSlug] = useState("");
   const [qrPopUp, setQrPopUp] = useState(false);
 
+  const getStandardDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.getMonth() + 1; // Months are 0-based
+    const year = date.getFullYear();
+
+    // Pad single-digit day and month with leading zero if needed
+    const formattedDay = day < 10 ? `0${day}` : day;
+    const formattedMonth = month < 10 ? `0${month}` : month;
+
+    return `${formattedDay}/${formattedMonth}/${year}`;
+  };
+
   useProtectedPage();
   return (
     <DashboardLayout>
       <ToastContainer />
-
+      {/* create link modal */}
       {createLinkForm && createLink !== "success" && (
         <CreateModal
           closing={"Close"}
@@ -90,15 +102,18 @@ const Links = () => {
         >
           <form className="space-y-2" onSubmit={handleSubmit(onSubmit)}>
             <input
-              className="border border-gray-300 rounded w-[380px] px-2 py-1"
+              className=" text-center border border-gray-300 rounded w-[380px] px-2 py-1"
               type="text"
               {...register("link", { required: true })}
             />
-            {errors.link && (
-              <span className=" text-red-600 text-center">
-                Link is required
-              </span>
-            )}
+            {(errors.link && (
+              <center>
+                <span className=" text-red-600 text-center">
+                  Link is required
+                </span>
+              </center>
+            )) ||
+              errors?.errors}
             <button
               type="submit"
               className="bg-pink-800 text-white text-center rounded w-full p-2 hover:text-black"
@@ -107,8 +122,10 @@ const Links = () => {
               {createLink === "loading" ? "Creating..." : "Create Link"}
             </button>
           </form>
+          {createLink === "success" && <h4>Success</h4>}
         </CreateModal>
       )}
+      {/* QR modal */}
       {qrPopUp && (
         <CreateModal
           urlLink={selectedSlug}
@@ -116,6 +133,7 @@ const Links = () => {
           closeModal={() => setQrPopUp(false)}
         >
           <div
+            className="p-3"
             style={{
               height: "auto",
               margin: "0 auto",
@@ -130,12 +148,14 @@ const Links = () => {
               viewBox={`0 0 256 256`}
             />
           </div>
-          <h4>{selectedSlug}</h4>
+          <h4>'{selectedSlug}'</h4>
         </CreateModal>
       )}
+      {/* delete modal */}
       {deletePopUp && (
         <DeleteModal slug={selectedSlug} setDeletePopUp={setDeletePopUp} />
       )}
+      {/* edit modal */}
       {editStatus && (
         <CreateModal
           urlLink={selectedSlug}
@@ -148,7 +168,9 @@ const Links = () => {
           >
             <div className="space-y-1">
               <label htmlFor="">You want to edit the following link?</label>
-              <h4 className="text-center font-semibold">{`${BASE_URL}/${selectedSlug}`}</h4>
+              <h4 className=" font-semibold">
+                '{`${BASE_URL}/${selectedSlug}`}'
+              </h4>
             </div>
             <label htmlFor="">Insert new link:</label>
             <input
@@ -171,19 +193,21 @@ const Links = () => {
           </form>
         </CreateModal>
       )}
-      <div className=" p-4 bg-gray-400 space-y-2">
+      <div className=" p-4 bg-gray-400 space-y-2 min-h-screen">
         <div className="mx-2 flex justify-between items-center">
-          <h4 className=" p-2 text-xl font-semibold text-pink-800">Links</h4>
+          <h4 className=" p-2 text-3xl font-semibold tracking-wider text-pink-800">
+            Links
+          </h4>
           <button
             onClick={() => setCreateLinkForm(true)}
-            className="bg-pink-800 text-white p-2 rounded"
+            className="bg-pink-800 text-white py-2 px-3 rounded font-medium hover:bg-pink-900"
           >
-            New Link
+            + Link
           </button>
         </div>
 
         <table className="w-full table-auto bg-white">
-          <thead>
+          <thead className=" font-mono uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
               <th>No</th>
               <th>Destination</th>
@@ -195,6 +219,19 @@ const Links = () => {
             </tr>
           </thead>
           <tbody>
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={7} className="text-center space-x-3">
+                  <p className=" inline-block">No links 🥲</p>
+                  <button
+                    onClick={() => setCreateLinkForm(true)}
+                    className="bg-pink-800 text-white text-center rounded p-2 hover:bg-pink-900 inline-block"
+                  >
+                    Create now 😁
+                  </button>
+                </td>
+              </tr>
+            )}
             {data.map((column, index) => {
               return (
                 <tr className=" text-center" key={index}>
@@ -219,7 +256,7 @@ const Links = () => {
                     </button>
                   </td>
                   <td>{column.visit_counter}</td>
-                  <td>{column.created_at}</td>
+                  <td>{getStandardDate(column.created_at)}</td>
                   <td>
                     <EditLinkButton
                       deleteLink={() => {
@@ -283,14 +320,13 @@ const DeleteModal = ({ slug = "", setDeletePopUp }) => {
       closing={"Cancel"}
       closeModal={() => setDeletePopUp(false)}
     >
-      <h4 className=" font-semibold">Do you want to delete this link?</h4>
-      <h4>{slug}</h4>
-      <h4>'{`${BASE_URL}/${slug}`}'</h4>
+      <h4>Do you want to delete this link?</h4>
+      <h4 className="font-semibold">'{`${BASE_URL}/${slug}`}'</h4>
       <button
         className="bg-pink-800 text-white text-center rounded w-full p-2 hover:text-black"
         onClick={() => handleDeleteLink(slug)}
       >
-        {deleteLink === "success" ? "Confirm" : "Deleting"}
+        {deleteLink !== "loading" ? "Confirm" : "Deleting"}
       </button>
     </CreateModal>
   );

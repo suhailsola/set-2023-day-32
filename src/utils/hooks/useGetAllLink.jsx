@@ -11,11 +11,12 @@ const useGetAllLink = (deps = []) => {
     try {
       setLinkState("loading");
       const data = await getAllLinks(jwtCookie);
-      console.log(data.data.data.rows);
+      //   console.log(data.data.data.rows);
       setLinkState("success");
       setData(data.data.data.rows);
     } catch (error) {
       setLinkState("error");
+      console.log(linkState);
     }
   };
 

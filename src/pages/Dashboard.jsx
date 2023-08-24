@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import "react-toastify/dist/ReactToastify.css";
 
 import { useProtectedPage } from "../utils/hooks/useProtectedPage";
@@ -16,10 +16,11 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import useGetAllLink from "../utils/hooks/useGetAllLink";
+import { AuthContext } from "../App";
 
 const Dashboard = () => {
   useProtectedPage();
-
+  const { username } = useContext(AuthContext);
   const { linkState, data } = useGetAllLink();
 
   ChartJS.register(
@@ -52,7 +53,7 @@ const Dashboard = () => {
       },
       title: {
         display: true,
-        text: "Chart.js Horizontal Bar Chart",
+        text: "Visit Counter",
       },
     },
   };
@@ -72,8 +73,14 @@ const Dashboard = () => {
   };
   return (
     <DashboardLayout>
-      <h1>Dashboard</h1>
-      <Bar options={options} data={chartData} />
+      <div className="w-full h-full flex flex-col justify-center items-center mt-6">
+        <h4 className="p-2 text-2xl font-mono font-bold">
+          You're doing great, {username}
+        </h4>
+        <div className=" w-full h-full">
+          <Bar className="m-2" options={options} data={chartData} />
+        </div>
+      </div>
     </DashboardLayout>
   );
 };
